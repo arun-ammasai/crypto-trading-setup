@@ -33,7 +33,8 @@ def analyze_coin(
 ):
     try:
         pair = f"{symbol.upper()}/USDT"
-        exchange = ccxt.binance()
+        #exchange = ccxt.binance()
+		exchange = ccxt.bybit()
         # Fetch OHLCV
         ohlcv = exchange.fetch_ohlcv(pair, timeframe=timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp","open","high","low","close","volume"])
