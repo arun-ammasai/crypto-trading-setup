@@ -109,4 +109,42 @@ async def get_markets(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/binance/usdt_markets")
+async def get_usdt_markets(
+    vs_currency: str = "usd",
+    per_page: int = 100,
+    page: int = 1
+):
+    try:
+        # 1. Fetch top coins from CoinGecko
+        params = {
+            "vs_currency": vs_currency,
+            "order": "market_cap_desc",
+            "per_page": per_page,
+            "page": page,
+            "sparkline": "false"
+        }
+        COINGECKO_URL = "https://api.coingecko.com/api/v3/coins/markets"
 
+        async with httpx.AsyncClient() as client:
+            cg_resp = await client.get(COINGECKO_URL, params=params)
+            cg_resp.raise_for_status()
+            top_coins = cg_resp.json()
+
+        # 2. Load Binance markets
+        exchange = ccxt.binance()
+        markets = exchange.load_markets()
+
+        # 3. Filter coins that have USDT pairs in Binance
+        filtered = []
+        for coin in top_coins:
+            symbol = coin["symbol"].upper()
+            pair = f"{symbol}/USDT"
+            if pair in markets:
+                filtered.append(coin)  # keep the original CoinGecko coin data
+
+        # 4. Return only CoinGecko-like response but filtered
+        return filtered
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))        
