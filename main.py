@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from typing import List, Dict
 from ohlcv import fetch_ohlcv, analyze_ta, BulkRequest
 import ccxt
 import pandas as pd
 from datetime import datetime
+import httpx
 
 app = FastAPI(title="Crypto Trading Backend")
 
@@ -80,3 +81,32 @@ def analyze_bulk(request: BulkRequest):
                 "error": str(e)
             })
     return {"results": results}
+
+@app.get("/coingecko/markets")
+async def get_markets(
+    vs_currency: str = "usd",
+    order: str = "market_cap_desc",
+    per_page: int = 100,
+    page: int = 1,
+    sparkline: bool = False
+):
+    params = {
+        "vs_currency": vs_currency,
+        "order": order,
+        "per_page": per_page,
+        "page": page,
+        "sparkline": str(sparkline).lower()
+    }
+
+    try:
+        COINGECKO_URL = "https://api.coingecko.com/api/v3/coins/markets"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(COINGECKO_URL, params=params)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
