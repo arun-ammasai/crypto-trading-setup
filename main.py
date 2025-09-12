@@ -33,8 +33,7 @@ def analyze_coin(
 ):
     try:
         pair = f"{symbol.upper()}/USDT"
-        #exchange = ccxt.binance()
-        exchange = ccxt.bybit()
+        exchange = ccxt.binance()
         # Fetch OHLCV
         ohlcv = exchange.fetch_ohlcv(pair, timeframe=timeframe, limit=limit)
         df = pd.DataFrame(ohlcv, columns=["timestamp","open","high","low","close","volume"])
@@ -56,7 +55,7 @@ def analyze_coin(
 @app.post("/analyze_bulk")
 def analyze_bulk(request: BulkRequest):
     results = []
-    exchange = ccxt.bybit()
+    exchange = ccxt.binance()
     print("Total Items : ",len(request.coins))
     for coin in request.coins:
         try:
