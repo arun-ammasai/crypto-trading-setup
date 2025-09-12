@@ -47,7 +47,7 @@ def analyze_ta(df: pd.DataFrame) -> Dict:
 
 def fetch_ohlcv(symbol: str = "BTC/USDT", timeframe: str = "1h", limit: int = 100) -> List[Dict]:
 	"""Fetch OHLCV data from Binance and return as list of dicts."""
-	exchange = ccxt.bybit()
+	exchange = ccxt.binance()
 	ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
 	df = pd.DataFrame(ohlcv, columns=["timestamp","open","high","low","close","volume"])
 	df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
