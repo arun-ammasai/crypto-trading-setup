@@ -147,4 +147,40 @@ async def get_usdt_markets(
         return filtered
 
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/coingecko/rank/{coin_id}")
+async def get_coin_rank(coin_id: str, vs_currency: str = "usd"):
+    """
+    Fetch the market cap rank of a specific coin from CoinGecko
+    Example: /coingecko/rank/bitcoin or /coingecko/rank/ethereum
+    """
+    params = {
+        "vs_currency": vs_currency,
+        "ids": coin_id.lower()
+    }
+    COINGECKO_URL = "https://api.coingecko.com/api/v3/coins/markets"
+
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(COINGECKO_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+        if not data:
+            raise HTTPException(status_code=404, detail=f"Coin '{coin_id}' not found")
+
+        coin = data[0]
+
+        return {
+            "id": coin["id"],
+            "symbol": coin["symbol"],
+            "name": coin["name"],
+            "rank": coin.get("market_cap_rank")
+        }
+
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))        
