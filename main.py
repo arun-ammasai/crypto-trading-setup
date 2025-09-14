@@ -185,7 +185,7 @@ async def get_coin_rank(coin_id: str, vs_currency: str = "usd"):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/coingecko/price/{coin_id}")
+@app.get("/coingecko/price_backup/{coin_id}")
 async def get_simple_price(coin_id: str):
     """
     Fetch simple USD price for a coin from CoinGecko.
@@ -210,6 +210,47 @@ async def get_simple_price(coin_id: str):
             "id": coin_id.lower(),
             "price_usd": data[coin_id.lower()]["usd"]
         }
+
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/coingecko/price")
+async def get_simple_prices(coin_ids: str = Query(..., description="Comma-separated list of coin IDs")):
+    """
+    Fetch simple USD prices for multiple coins from CoinGecko.
+    Example: /coingecko/price?coin_ids=bitcoin,ethereum,dogecoin
+    """
+    params = {
+        "ids": coin_ids.lower(),
+        "vs_currencies": "usd"
+    }
+    COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(COINGECKO_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+        if not data:
+            raise HTTPException(status_code=404, detail="No coins found")
+
+        result = []
+        for coin_id in coin_ids.split(","):
+            coin_id = coin_id.strip().lower()
+            if coin_id in data:
+                result.append({
+                    "id": coin_id,
+                    "price_usd": data[coin_id]["usd"]
+                })
+            else:
+                result.append({
+                    "id": coin_id,
+                    "error": "Not found"
+                })
+
+        return result
 
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=str(e))
