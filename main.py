@@ -5,6 +5,7 @@ import ccxt
 import pandas as pd
 from datetime import datetime
 import httpx
+from nse_scraper import get_nse_fii_dii
 
 app = FastAPI(title="Crypto Trading Backend")
 
@@ -256,3 +257,11 @@ async def get_simple_prices(coin_ids: str = Query(..., description="Comma-separa
         raise HTTPException(status_code=e.response.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/nse/fii-dii")
+async def get_fii_dii_data():
+    """
+    Get FII and DII trading activity from NSE.
+    """
+    return await get_nse_fii_dii()
+
